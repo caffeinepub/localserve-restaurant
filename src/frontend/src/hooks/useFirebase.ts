@@ -34,6 +34,7 @@ export function useRestaurants() {
           announcement: v.announcement || "",
           isActive: v.isActive !== false,
           upiId: v.upiId || "",
+          adminPassword: v.adminPassword || "",
         }),
       );
       setRestaurants(list);
@@ -77,6 +78,7 @@ export function useRestaurant(id: string) {
           announcement: v.announcement || "",
           isActive: v.isActive !== false,
           upiId: v.upiId || "",
+          adminPassword: v.adminPassword || "",
         });
       }
       setLoading(false);

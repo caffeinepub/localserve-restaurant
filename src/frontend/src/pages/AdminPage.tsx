@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Download,
   Edit,
+  Eye,
+  EyeOff,
   LayoutDashboard,
   List,
   LogOut,
@@ -140,6 +142,32 @@ function LoginGate({ onLogin }: { onLogin: () => void }) {
 }
 
 // ---- Restaurant Form ----
+// ---- Admin Password Input (show/hide toggle) ----
+function AdminPasswordInput({
+  value,
+  onChange,
+}: { value: string; onChange: (v: string) => void }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative mt-1">
+      <Input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Set a password for this restaurant's owner"
+        className="pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
+
 function RestaurantForm({
   initial,
   onSave,
@@ -170,6 +198,7 @@ function RestaurantForm({
       holidays: [],
       announcement: "",
       upiId: "",
+      adminPassword: "",
     },
   );
   const [saving, setSaving] = useState(false);
@@ -282,6 +311,16 @@ function RestaurantForm({
           <p className="text-xs text-gray-400 mt-1">
             e.g. 9876543210@paytm, shop@ybl, abc@okaxis
           </p>
+          <div>
+            <Label>Restaurant Admin Password</Label>
+            <AdminPasswordInput
+              value={(form.adminPassword as string) || ""}
+              onChange={(v) => setForm((f) => ({ ...f, adminPassword: v }))}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Restaurant owner will use this password to login to their panel
+            </p>
+          </div>
         </div>
         <div>
           <Label>Delivery Charge</Label>

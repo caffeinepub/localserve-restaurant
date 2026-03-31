@@ -20,6 +20,7 @@ export interface Restaurant {
   announcement: string;
   isActive: boolean;
   upiId?: string;
+  adminPassword?: string;
 }
 
 export interface Category {

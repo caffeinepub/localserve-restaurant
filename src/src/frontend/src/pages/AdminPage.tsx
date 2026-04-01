@@ -854,37 +854,28 @@ export function AdminPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {cat.image && (
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-12 h-12 object-cover rounded-lg border border-gray-200 flex-shrink-0"
-                      />
-                    )}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingCat(cat);
-                          setCatDialog(true);
-                        }}
-                      >
-                        <Edit size={14} />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500"
-                        onClick={async () => {
-                          await deleteCategory(selectedRestaurantId, cat.id);
-                          toast.success("Deleted");
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingCat(cat);
+                        setCatDialog(true);
+                      }}
+                    >
+                      <Edit size={14} />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-500"
+                      onClick={async () => {
+                        await deleteCategory(selectedRestaurantId, cat.id);
+                        toast.success("Deleted");
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
                   </div>
                 </div>
               ))}

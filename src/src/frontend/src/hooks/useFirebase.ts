@@ -266,15 +266,11 @@ export async function saveMenuItem(
   data: Partial<MenuItem> & { id?: string },
 ) {
   const { id, ...rest } = data;
-  // Remove undefined values - Firebase rejects them
-  const clean = Object.fromEntries(
-    Object.entries(rest).filter(([, v]) => v !== undefined),
-  );
   if (id) {
-    await set(ref(db, `items/${restaurantId}/${id}`), clean);
+    await update(ref(db, `items/${restaurantId}/${id}`), rest);
   } else {
     const newRef = push(ref(db, `items/${restaurantId}`));
-    await set(newRef, clean);
+    await set(newRef, rest);
   }
 }
 

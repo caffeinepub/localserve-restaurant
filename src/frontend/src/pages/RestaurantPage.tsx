@@ -56,9 +56,16 @@ function VegBadge({ type }: { type: "veg" | "nonveg" }) {
 
 function MenuItemCard({ item, isOpen }: { item: MenuItem; isOpen: boolean }) {
   const { items: cartItems, addItem, updateQty } = useCart();
+  const availableVariants = (["H", "M", "F"] as const).filter((v) =>
+    v === "H"
+      ? (item.halfPrice ?? 0) > 0
+      : v === "M"
+        ? (item.mediumPrice ?? 0) > 0
+        : (item.fullPrice ?? 0) > 0,
+  );
   const [selectedVariant, setSelectedVariant] = useState<
     "H" | "M" | "F" | "regular"
-  >("H");
+  >(availableVariants[0] ?? "H");
   const todayName = DAYS[new Date().getDay()];
   const dayOfferActive =
     item.dayOffer &&
@@ -144,7 +151,7 @@ function MenuItemCard({ item, isOpen }: { item: MenuItem; isOpen: boolean }) {
         )}
         {item.hasHalfFull && (
           <div className="flex gap-1.5 mt-1.5">
-            {(["H", "M", "F"] as const).map((v) => (
+            {availableVariants.map((v) => (
               <button
                 type="button"
                 key={v}
@@ -558,19 +565,28 @@ export function RestaurantPage() {
                 }}
                 className="mb-8"
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-gray-800 text-lg">
-                    {cat.name}
-                  </h3>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      cat.type === "veg"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {cat.type === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
-                  </span>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-800 text-lg">
+                      {cat.name}
+                    </h3>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        cat.type === "veg"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {cat.type === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
+                    </span>
+                  </div>
+                  {cat.image && (
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
+                    />
+                  )}
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   {catItems.map((item, idx) => (

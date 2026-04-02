@@ -558,19 +558,28 @@ export function RestaurantPage() {
                 }}
                 className="mb-8"
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="font-bold text-gray-800 text-lg">
-                    {cat.name}
-                  </h3>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      cat.type === "veg"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {cat.type === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
-                  </span>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-800 text-lg">
+                      {cat.name}
+                    </h3>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        cat.type === "veg"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {cat.type === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
+                    </span>
+                  </div>
+                  {cat.image && (
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
+                    />
+                  )}
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   {catItems.map((item, idx) => (

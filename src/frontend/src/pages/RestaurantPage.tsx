@@ -1,3 +1,10 @@
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -56,6 +63,8 @@ function VegBadge({ type }: { type: "veg" | "nonveg" }) {
 
 function MenuItemCard({ item, isOpen }: { item: MenuItem; isOpen: boolean }) {
   const { items: cartItems, addItem, updateQty } = useCart();
+  const [addonDialogOpen, setAddonDialogOpen] = useState(false);
+  const [selectedAddons, setSelectedAddons] = useState<Set<number>>(new Set());
   const availableVariants = (["H", "M", "F"] as const).filter((v) =>
     v === "H"
       ? (item.halfPrice ?? 0) > 0
@@ -91,140 +100,217 @@ function MenuItemCard({ item, isOpen }: { item: MenuItem; isOpen: boolean }) {
   );
   const qty = cartEntry?.qty || 0;
 
-  function handleAdd() {
-    if (!isOpen) return;
+  function addItemToCart(chosenAddons: { name: string; price: number }[]) {
+    const addonTotal = chosenAddons.reduce((s, a) => s + a.price, 0);
     addItem({
       itemId: item.id,
       name: item.name,
       qty: 1,
-      price: item.isFree ? 0 : effectivePrice,
+      price: item.isFree ? 0 : (effectivePrice ?? 0) + addonTotal,
       variant: getVariantLabel(),
+      addons: chosenAddons.length > 0 ? chosenAddons : undefined,
     });
   }
 
+  function handleAdd() {
+    if (!isOpen) return;
+    if (item.addons && item.addons.length > 0) {
+      setSelectedAddons(new Set());
+      setAddonDialogOpen(true);
+      return;
+    }
+    addItemToCart([]);
+  }
+
   return (
-    <div
-      className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex gap-3 p-3 transition-all ${
-        item.isOutOfStock ? "opacity-60" : ""
-      }`}
-    >
-      <div className="relative flex-shrink-0">
-        {item.image ? (
-          <img
-            src={item.image}
-            alt={item.name}
-            className="w-20 h-20 object-cover rounded-lg"
-          />
-        ) : (
-          <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-            🍽️
-          </div>
-        )}
-        {item.isOutOfStock && (
-          <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold text-center">
-              Out of
-              <br />
-              Stock
-            </span>
-          </div>
-        )}
-        {item.bundleOffer && (
-          <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-            {item.bundleOffer}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <VegBadge type={item.type} />
-            <h4 className="font-semibold text-gray-800 text-sm truncate">
-              {item.name}
-            </h4>
-          </div>
-        </div>
-        {item.description && (
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-            {item.description}
-          </p>
-        )}
-        {item.hasHalfFull && (
-          <div className="flex gap-1.5 mt-1.5">
-            {availableVariants.map((v) => (
-              <button
-                type="button"
-                key={v}
-                onClick={() => setSelectedVariant(v)}
-                className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
-                  selectedVariant === v
-                    ? "bg-orange-500 text-white border-orange-500"
-                    : "border-gray-300 text-gray-600"
-                }`}
-              >
-                {v === "H" ? "Regular" : v === "M" ? "Medium" : "Full"}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex items-center justify-between mt-2">
-          <div>
-            {item.isFree ? (
-              <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                FREE
+    <>
+      <div
+        className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex gap-3 p-3 transition-all ${
+          item.isOutOfStock ? "opacity-60" : ""
+        }`}
+      >
+        <div className="relative flex-shrink-0">
+          {item.image ? (
+            <img
+              src={item.image}
+              alt={item.name}
+              className="w-20 h-20 object-cover rounded-lg"
+            />
+          ) : (
+            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+              🍽️
+            </div>
+          )}
+          {item.isOutOfStock && (
+            <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+              <span className="text-white text-xs font-bold text-center">
+                Out of
+                <br />
+                Stock
               </span>
-            ) : (
-              <div className="flex items-baseline gap-1">
-                <span className="font-bold text-gray-900">
-                  ₹{effectivePrice}
-                </span>
-                {dayOfferActive && (
-                  <span className="line-through text-gray-400 text-xs">
-                    ₹{item.price}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          {!item.isOutOfStock &&
-            isOpen &&
-            (qty === 0 ? (
-              <button
-                type="button"
-                onClick={handleAdd}
-                className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-4 py-1.5 rounded-full transition-colors"
-              >
-                ADD +
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => updateQty(item.id, getVariantLabel(), -1)}
-                  className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-lg leading-none transition-colors"
-                >
-                  −
-                </button>
-                <span className="font-bold text-gray-800 min-w-[1.5rem] text-center">
-                  {qty}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAdd}
-                  className="w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg leading-none transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            ))}
-          {(!isOpen || item.isOutOfStock) && !item.isFree && (
-            <span className="text-gray-400 text-xs">
-              {item.isOutOfStock ? "Unavailable" : "Closed"}
+            </div>
+          )}
+          {item.bundleOffer && (
+            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+              {item.bundleOffer}
             </span>
           )}
         </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <VegBadge type={item.type} />
+              <h4 className="font-semibold text-gray-800 text-sm truncate">
+                {item.name}
+              </h4>
+            </div>
+          </div>
+          {item.description && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+              {item.description}
+            </p>
+          )}
+          {item.hasHalfFull && (
+            <div className="flex gap-1.5 mt-1.5">
+              {availableVariants.map((v) => (
+                <button
+                  type="button"
+                  key={v}
+                  onClick={() => setSelectedVariant(v)}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
+                    selectedVariant === v
+                      ? "bg-orange-500 text-white border-orange-500"
+                      : "border-gray-300 text-gray-600"
+                  }`}
+                >
+                  {v === "H" ? "Regular" : v === "M" ? "Medium" : "Full"}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center justify-between mt-2">
+            <div>
+              {item.isFree ? (
+                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                  FREE
+                </span>
+              ) : (
+                <div className="flex items-baseline gap-1">
+                  <span className="font-bold text-gray-900">
+                    ₹{effectivePrice}
+                  </span>
+                  {dayOfferActive && (
+                    <span className="line-through text-gray-400 text-xs">
+                      ₹{item.price}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            {!item.isOutOfStock &&
+              isOpen &&
+              (qty === 0 ? (
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-4 py-1.5 rounded-full transition-colors"
+                >
+                  ADD +
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateQty(item.id, getVariantLabel(), -1)}
+                    className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-lg leading-none transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="font-bold text-gray-800 min-w-[1.5rem] text-center">
+                    {qty}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAdd}
+                    className="w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg leading-none transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              ))}
+            {(!isOpen || item.isOutOfStock) && !item.isFree && (
+              <span className="text-gray-400 text-xs">
+                {item.isOutOfStock ? "Unavailable" : "Closed"}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+      {item.addons && item.addons.length > 0 && (
+        <Dialog open={addonDialogOpen} onOpenChange={setAddonDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Add-ons for {item.name}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-gray-500 mb-3">
+              Select extra items (optional):
+            </p>
+            <div className="space-y-2">
+              {item.addons.map((addon, i) => (
+                <label
+                  key={String(i)}
+                  className="flex items-center justify-between p-3 rounded-xl border cursor-pointer hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedAddons.has(i)}
+                      onChange={() => {
+                        setSelectedAddons((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(i)) next.delete(i);
+                          else next.add(i);
+                          return next;
+                        });
+                      }}
+                      className="w-4 h-4 accent-orange-500"
+                    />
+                    <span className="font-medium text-sm">{addon.name}</span>
+                  </div>
+                  <span className="text-orange-600 font-bold text-sm">
+                    +₹{addon.price}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  addItemToCart([]);
+                  setAddonDialogOpen(false);
+                }}
+              >
+                Skip
+              </Button>
+              <Button
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => {
+                  const chosen = (item.addons || []).filter((_, i) =>
+                    selectedAddons.has(i),
+                  );
+                  addItemToCart(chosen);
+                  setAddonDialogOpen(false);
+                }}
+              >
+                Add to Cart
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
 
@@ -474,7 +560,8 @@ export function RestaurantPage() {
                     <ul className="text-xs text-gray-600 space-y-0.5 mb-3">
                       {offer.items.map((oi, i) => (
                         <li key={String(i)}>
-                          • {getOfferItemName(oi.itemId)} ×{oi.qty}
+                          • {oi.name || getOfferItemName(oi.itemId || "")} ×
+                          {oi.qty}
                         </li>
                       ))}
                     </ul>

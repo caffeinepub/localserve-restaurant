@@ -1,7 +1,14 @@
 import { onValue, push, ref, remove, set, update } from "firebase/database";
 import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
-import type { Category, MenuItem, Offer, Order, Restaurant } from "../types";
+import type {
+  Category,
+  MenuItem,
+  Offer,
+  OfferItem,
+  Order,
+  Restaurant,
+} from "../types";
 
 export function useRestaurants() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -29,6 +36,7 @@ export function useRestaurants() {
           deliveryCharge: v.deliveryCharge || 0,
           packingCharge: v.packingCharge || 0,
           platformFee: v.platformFee || 0,
+          minDeliveryOrder: v.minDeliveryOrder || 0,
           emergencyNo: v.emergencyNo || "",
           cyberCrimeNo: v.cyberCrimeNo || "",
           announcement: v.announcement || "",
@@ -73,6 +81,7 @@ export function useRestaurant(id: string) {
           deliveryCharge: v.deliveryCharge || 0,
           packingCharge: v.packingCharge || 0,
           platformFee: v.platformFee || 0,
+          minDeliveryOrder: v.minDeliveryOrder || 0,
           emergencyNo: v.emergencyNo || "",
           cyberCrimeNo: v.cyberCrimeNo || "",
           announcement: v.announcement || "",
@@ -142,6 +151,7 @@ export function useMenuItems(restaurantId: string) {
           dayOffer: v.dayOffer || undefined,
           bundleOffer: v.bundleOffer || undefined,
           description: v.description || undefined,
+          addons: v.addons ? Object.values(v.addons) : undefined,
         }),
       );
       setItems(list);
@@ -265,12 +275,21 @@ export async function saveMenuItem(
   restaurantId: string,
   data: Partial<MenuItem> & { id?: string },
 ) {
-  const { id, ...rest } = data;
+  const { id, addons, ...rest } = data as any;
+  // Remove undefined values - Firebase rejects them
+  const clean: any = Object.fromEntries(
+    Object.entries(rest).filter(([, v]) => v !== undefined),
+  );
+  if (addons && addons.length > 0) {
+    clean.addons = Object.fromEntries(
+      addons.map((a: any, i: number) => [i, a]),
+    );
+  }
   if (id) {
-    await update(ref(db, `items/${restaurantId}/${id}`), rest);
+    await set(ref(db, `items/${restaurantId}/${id}`), clean);
   } else {
     const newRef = push(ref(db, `items/${restaurantId}`));
-    await set(newRef, rest);
+    await set(newRef, clean);
   }
 }
 
@@ -286,7 +305,7 @@ export async function saveOffer(
   const payload: any = { ...rest };
   if (items)
     payload.items = Object.fromEntries(
-      items.map((it: any, i: number) => [i, it]),
+      items.map((it: OfferItem, i: number) => [i, it]),
     );
   if (id) {
     await update(ref(db, `offers/${restaurantId}/${id}`), payload);

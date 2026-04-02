@@ -191,6 +191,7 @@ function RestaurantForm({
       deliveryCharge: 0,
       packingCharge: 0,
       platformFee: 0,
+      minDeliveryOrder: 0,
       emergencyNo: "",
       cyberCrimeNo: "",
       isActive: true,
@@ -354,6 +355,23 @@ function RestaurantForm({
             }
             className="mt-1"
           />
+        </div>
+        <div>
+          <Label>Min. Delivery Order (₹)</Label>
+          <Input
+            type="number"
+            value={form.minDeliveryOrder || 0}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                minDeliveryOrder: Number(e.target.value),
+              }))
+            }
+            className="mt-1"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Set 0 for no minimum order
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -1585,12 +1603,15 @@ function MenuItemForm({
       isFree: false,
       isOutOfStock: false,
       image: "",
+      addons: [],
     },
   );
   const [dayOfferDay, setDayOfferDay] = useState(initial?.dayOffer?.day || "");
   const [dayOfferPrice, setDayOfferPrice] = useState(
     initial?.dayOffer?.price || 0,
   );
+  const [addonName, setAddonName] = useState("");
+  const [addonPrice, setAddonPrice] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1775,6 +1796,79 @@ function MenuItemForm({
           />
         </div>
       </div>
+      {/* Add-ons */}
+      <div className="border rounded-xl p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Switch
+            checked={(form.addons?.length ?? 0) > 0 || false}
+            onCheckedChange={(v) => {
+              if (!v) setForm((f) => ({ ...f, addons: [] }));
+            }}
+            id="has-addons"
+          />
+          <Label htmlFor="has-addons" className="font-semibold">
+            Extra Add-ons
+          </Label>
+        </div>
+        <div className="flex gap-2 mt-1">
+          <Input
+            placeholder="Add-on name (e.g. Extra Cheese)"
+            value={addonName}
+            onChange={(e) => setAddonName(e.target.value)}
+            className="flex-1"
+          />
+          <Input
+            type="number"
+            placeholder="₹"
+            value={addonPrice}
+            onChange={(e) => setAddonPrice(Number(e.target.value))}
+            className="w-20"
+            min={0}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (!addonName.trim()) return;
+              setForm((f) => ({
+                ...f,
+                addons: [
+                  ...(f.addons || []),
+                  { name: addonName.trim(), price: addonPrice },
+                ],
+              }));
+              setAddonName("");
+              setAddonPrice(0);
+            }}
+          >
+            <Plus size={14} />
+          </Button>
+        </div>
+        <div className="mt-2 space-y-1">
+          {(form.addons || []).map((addon, i) => (
+            <div
+              key={String(i)}
+              className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5"
+            >
+              <span>
+                {addon.name} — ₹{addon.price}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    addons: (f.addons || []).filter((_, j) => j !== i),
+                  }))
+                }
+                className="text-red-400 hover:text-red-600"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
       {/* Image */}
       <div>
         <Label>Item Image</Label>
@@ -1832,11 +1926,25 @@ function OfferForm({
     name: initial?.name || "",
     price: initial?.price || 0,
     validDay: initial?.validDay || "everyday",
-    items: initial?.items || ([] as { itemId: string; qty: number }[]),
+    items:
+      initial?.items ||
+      ([] as { itemId?: string; name?: string; qty: number }[]),
     id: initial?.id,
   });
   const [selItemId, setSelItemId] = useState("");
   const [selQty, setSelQty] = useState(1);
+  const [manualItemName, setManualItemName] = useState("");
+  const [manualQty, setManualQty] = useState(1);
+
+  function addManualItem() {
+    if (!manualItemName.trim()) return;
+    setForm((f) => ({
+      ...f,
+      items: [...f.items, { name: manualItemName.trim(), qty: manualQty }],
+    }));
+    setManualItemName("");
+    setManualQty(1);
+  }
 
   function addOfferItem() {
     if (!selItemId) return;
@@ -1916,6 +2024,27 @@ function OfferForm({
             <Plus size={14} />
           </Button>
         </div>
+        <div className="flex gap-2 mt-2">
+          <Input
+            placeholder="Manual item name"
+            value={manualItemName}
+            onChange={(e) => setManualItemName(e.target.value)}
+            className="flex-1"
+          />
+          <Input
+            type="number"
+            value={manualQty}
+            onChange={(e) => setManualQty(Number(e.target.value))}
+            className="w-16"
+            min={1}
+          />
+          <Button variant="outline" onClick={addManualItem}>
+            <Plus size={14} />
+          </Button>
+        </div>
+        <p className="text-xs text-gray-400 mt-1">
+          Or type item name manually above
+        </p>
         <div className="mt-2 space-y-1">
           {form.items.map((oi, i) => (
             <div
@@ -1923,8 +2052,10 @@ function OfferForm({
               className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5"
             >
               <span>
-                {menuItems.find((m) => m.id === oi.itemId)?.name || oi.itemId} ×
-                {oi.qty}
+                {oi.name ||
+                  menuItems.find((m) => m.id === oi.itemId)?.name ||
+                  oi.itemId}{" "}
+                ×{oi.qty}
               </span>
               <button
                 type="button"

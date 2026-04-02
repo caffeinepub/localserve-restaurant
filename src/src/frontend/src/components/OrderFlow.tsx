@@ -107,10 +107,15 @@ export function OrderFlow({ open, onClose, restaurant }: Props) {
 
   function shareSlipWhatsApp(order: any) {
     const itemsText = order.items
-      .map(
-        (i: any) =>
-          `• ${i.name}${i.variant ? ` (${i.variant})` : ""} x${i.qty} = Rs.${(i.price * i.qty).toFixed(0)}`,
-      )
+      .map((i: any) => {
+        let line = `• ${i.name}${i.variant ? ` (${i.variant})` : ""} x${i.qty} = Rs.${(i.price * i.qty).toFixed(0)}`;
+        if (i.addons && i.addons.length > 0) {
+          line += i.addons
+            .map((a: any) => `\n  + ${a.name}: Rs.${a.price}`)
+            .join("");
+        }
+        return line;
+      })
       .join("\n");
     const lines = [
       "*ORDER RECEIPT*",
@@ -213,6 +218,20 @@ export function OrderFlow({ open, onClose, restaurant }: Props) {
         doc.text(String(item.qty), 125, y);
         doc.text(`Rs.${(item.price * item.qty).toFixed(0)}`, 160, y);
         y += 6;
+        if (item.addons && item.addons.length > 0) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          for (const addon of item.addons) {
+            doc.text(
+              `  + ${addon.name}: Rs.${addon.price} x${item.qty}`,
+              15,
+              y,
+            );
+            y += 5;
+          }
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+        }
       }
 
       // Totals
@@ -304,6 +323,13 @@ export function OrderFlow({ open, onClose, restaurant }: Props) {
               data-ocid="order.delivery.button"
               onClick={() => {
                 setOrderType("delivery");
+                const minOrder = restaurant.minDeliveryOrder || 0;
+                if (minOrder > 0 && subtotal < minOrder) {
+                  toast.error(
+                    `Minimum order for home delivery is ₹${minOrder}. Please add items worth at least ₹${minOrder - subtotal} more.`,
+                  );
+                  return;
+                }
                 setStep("info");
               }}
               className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
@@ -416,14 +442,27 @@ export function OrderFlow({ open, onClose, restaurant }: Props) {
           <div className="mt-2">
             <div className="bg-gray-50 rounded-xl p-4 space-y-2 max-h-52 overflow-y-auto mb-4">
               {items.map((item, i) => (
-                <div key={String(i)} className="flex justify-between text-sm">
-                  <span>
-                    {item.name}
-                    {item.variant ? ` (${item.variant})` : ""} x {item.qty}
-                  </span>
-                  <span className="font-semibold">
-                    Rs.{(item.price * item.qty).toFixed(0)}
-                  </span>
+                <div key={String(i)} className="text-sm">
+                  <div className="flex justify-between">
+                    <span>
+                      {item.name}
+                      {item.variant ? ` (${item.variant})` : ""} x{item.qty}
+                    </span>
+                    <span className="font-semibold">
+                      Rs.{(item.price * item.qty).toFixed(0)}
+                    </span>
+                  </div>
+                  {item.addons?.map((a, j) => (
+                    <div
+                      key={String(j)}
+                      className="flex justify-between text-xs text-orange-600 pl-2"
+                    >
+                      <span>+ {a.name}</span>
+                      <span>
+                        +₹{a.price} x{item.qty}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -674,12 +713,25 @@ export function OrderFlow({ open, onClose, restaurant }: Props) {
               )}
               <div className="border-t pt-3 space-y-1">
                 {placedOrder.items.map((item: any, i: number) => (
-                  <div key={String(i)} className="flex justify-between text-sm">
-                    <span>
-                      {item.name}
-                      {item.variant ? ` (${item.variant})` : ""} x{item.qty}
-                    </span>
-                    <span>Rs.{(item.price * item.qty).toFixed(0)}</span>
+                  <div key={String(i)} className="text-sm">
+                    <div className="flex justify-between">
+                      <span>
+                        {item.name}
+                        {item.variant ? ` (${item.variant})` : ""} x{item.qty}
+                      </span>
+                      <span>Rs.{(item.price * item.qty).toFixed(0)}</span>
+                    </div>
+                    {item.addons?.map((a: any, j: number) => (
+                      <div
+                        key={String(j)}
+                        className="flex justify-between text-xs text-orange-600 pl-2"
+                      >
+                        <span>+ {a.name}</span>
+                        <span>
+                          +₹{a.price} x{item.qty}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

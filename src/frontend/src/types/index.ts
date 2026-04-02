@@ -15,6 +15,7 @@ export interface Restaurant {
   deliveryCharge: number;
   packingCharge: number;
   platformFee: number;
+  minDeliveryOrder?: number;
   emergencyNo: string;
   cyberCrimeNo: string;
   announcement: string;
@@ -29,6 +30,11 @@ export interface Category {
   type: "veg" | "nonveg";
   order: number;
   image?: string;
+}
+
+export interface AddonOption {
+  name: string;
+  price: number;
 }
 
 export interface MenuItem {
@@ -47,13 +53,20 @@ export interface MenuItem {
   dayOffer?: { day: string; price: number };
   bundleOffer?: string;
   description?: string;
+  addons?: AddonOption[];
+}
+
+export interface OfferItem {
+  itemId?: string;
+  name?: string;
+  qty: number;
 }
 
 export interface Offer {
   id: string;
   name: string;
   price: number;
-  items: { itemId: string; qty: number }[];
+  items: OfferItem[];
   validDay: string;
 }
 
@@ -86,4 +99,5 @@ export interface CartItem {
   qty: number;
   price: number;
   variant: string;
+  addons?: AddonOption[];
 }

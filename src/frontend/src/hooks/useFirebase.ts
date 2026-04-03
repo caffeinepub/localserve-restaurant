@@ -324,11 +324,28 @@ export async function saveOrder(
   order: Omit<Order, "id">,
 ) {
   const { items, ...rest } = order as any;
-  const payload: any = { ...rest };
-  if (items)
+  // Remove undefined values from top-level order object
+  const cleanRest: any = Object.fromEntries(
+    Object.entries(rest).filter(([, v]) => v !== undefined),
+  );
+  const payload: any = { ...cleanRest };
+  if (items) {
     payload.items = Object.fromEntries(
-      items.map((it: any, i: number) => [i, it]),
+      items.map((it: any, i: number) => {
+        // Clean each item - remove undefined fields, convert addons array to object
+        const { addons, ...itemRest } = it;
+        const cleanItem: any = Object.fromEntries(
+          Object.entries(itemRest).filter(([, v]) => v !== undefined),
+        );
+        if (addons && addons.length > 0) {
+          cleanItem.addons = Object.fromEntries(
+            addons.map((a: any, j: number) => [j, a]),
+          );
+        }
+        return [i, cleanItem];
+      }),
     );
+  }
   const newRef = push(ref(db, `orders/${restaurantId}`));
   await set(newRef, payload);
   return newRef.key;

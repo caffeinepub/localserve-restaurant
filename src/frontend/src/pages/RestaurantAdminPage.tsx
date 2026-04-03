@@ -710,17 +710,22 @@ export function RestaurantAdminPage() {
   const { offers } = useOffers(restaurantId);
   const { orders } = useOrders(restaurantId || undefined);
 
-  const prevOrderCountRef = useRef<number | null>(null);
+  const prevOrderCountRef = useRef<number>(-1);
   useEffect(() => {
-    if (prevOrderCountRef.current === null) {
+    if (!authedRestaurant) {
+      prevOrderCountRef.current = -1;
+      return;
+    }
+    if (prevOrderCountRef.current === -1) {
       prevOrderCountRef.current = orders.length;
       return;
     }
     if (orders.length > prevOrderCountRef.current) {
       playNewOrderAlert();
+      toast.success("🔔 New order received!", { duration: 5000 });
     }
     prevOrderCountRef.current = orders.length;
-  }, [orders.length]);
+  }, [orders.length, authedRestaurant]);
 
   // Dialog states
   const [catDialog, setCatDialog] = useState(false);

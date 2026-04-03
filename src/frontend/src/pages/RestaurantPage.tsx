@@ -421,8 +421,16 @@ export function RestaurantPage() {
         <h1 className="font-black text-gray-900 text-xl flex-1 truncate">
           {restaurant.name}
         </h1>
+        <button
+          type="button"
+          onClick={() => navigate("/track")}
+          data-ocid="restaurant.header.track_order.button"
+          className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors flex-shrink-0"
+        >
+          <Search size={14} /> Track Order
+        </button>
         <span
-          className={`px-3 py-1 rounded-full text-xs font-bold ${
+          className={`px-3 py-1 rounded-full text-xs font-bold flex-shrink-0 ${
             isOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
           }`}
         >
@@ -499,6 +507,14 @@ export function RestaurantPage() {
                   <MessageCircle size={15} /> WhatsApp
                 </a>
               )}
+              <button
+                type="button"
+                onClick={() => navigate("/track")}
+                data-ocid="restaurant.track_order.button"
+                className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              >
+                <Search size={15} /> Track Order
+              </button>
               {restaurant.emergencyNo && (
                 <a
                   href={`tel:${restaurant.emergencyNo}`}

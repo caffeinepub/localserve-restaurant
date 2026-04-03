@@ -36,7 +36,7 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   deleteCategory,
@@ -84,6 +84,38 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 // ---- Login Screen ----
+
+function playNewOrderAlert() {
+  try {
+    const ctx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    const beep = (freq: number, start: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.6, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + start + duration,
+      );
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + duration + 0.05);
+    };
+    beep(880, 0, 0.15);
+    beep(1100, 0.2, 0.15);
+    beep(1320, 0.4, 0.25);
+    beep(880, 0.8, 0.15);
+    beep(1100, 1.0, 0.15);
+    beep(1320, 1.2, 0.25);
+  } catch (_e) {
+    // Audio not available, silently fail
+  }
+}
+
 function RestaurantLoginGate({
   restaurants,
   onLogin,
@@ -677,6 +709,18 @@ export function RestaurantAdminPage() {
   const { items } = useMenuItems(restaurantId);
   const { offers } = useOffers(restaurantId);
   const { orders } = useOrders(restaurantId || undefined);
+
+  const prevOrderCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (prevOrderCountRef.current === null) {
+      prevOrderCountRef.current = orders.length;
+      return;
+    }
+    if (orders.length > prevOrderCountRef.current) {
+      playNewOrderAlert();
+    }
+    prevOrderCountRef.current = orders.length;
+  }, [orders.length]);
 
   // Dialog states
   const [catDialog, setCatDialog] = useState(false);

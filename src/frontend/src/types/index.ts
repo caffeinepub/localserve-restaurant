@@ -91,6 +91,7 @@ export interface Order {
   restaurantName: string;
   restaurantId: string;
   deliveryTime?: string;
+  acceptedAt?: number;
 }
 
 export interface CartItem {

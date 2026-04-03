@@ -343,6 +343,7 @@ export async function updateOrderStatus(
 ) {
   const updates: any = { status };
   if (rejectionReason) updates.rejectionReason = rejectionReason;
+  if (status === "accepted") updates.acceptedAt = Date.now();
   if (deliveryTime) updates.deliveryTime = deliveryTime;
   await update(ref(db, `orders/${restaurantId}/${orderId}`), updates);
 }

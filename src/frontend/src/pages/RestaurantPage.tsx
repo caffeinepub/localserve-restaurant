@@ -12,10 +12,12 @@ import {
   Clock,
   MessageCircle,
   Phone,
+  Search,
   Shield,
   Tag,
   Truck,
   User,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useState, useRef, useEffect } from "react";
@@ -325,6 +327,7 @@ export function RestaurantPage() {
   const [activeFilter, setActiveFilter] = useState<"all" | "veg" | "nonveg">(
     "all",
   );
+  const [searchQuery, setSearchQuery] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [orderOpen, setOrderOpen] = useState(false);
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -372,6 +375,17 @@ export function RestaurantPage() {
   const filteredItems = items.filter((item) =>
     activeFilter === "all" ? true : item.type === activeFilter,
   );
+
+  const searchResults = searchQuery.trim()
+    ? items.filter((item) => {
+        const q = searchQuery.toLowerCase();
+        const catName =
+          categories
+            .find((c) => c.id === item.categoryId)
+            ?.name?.toLowerCase() || "";
+        return item.name.toLowerCase().includes(q) || catName.includes(q);
+      })
+    : [];
 
   function scrollToCategory(catId: string) {
     categoryRefs.current[catId]?.scrollIntoView({
@@ -509,24 +523,72 @@ export function RestaurantPage() {
         <div className="max-w-4xl mx-auto px-4">
           <TypewriterHeading />
 
-          {/* Veg/NonVeg Filter */}
-          <div className="flex gap-2 mb-4">
-            {(["all", "veg", "nonveg"] as const).map((f) => (
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items or category..."
+              data-ocid="menu.search_input"
+              className="w-full pl-10 pr-10 py-3 rounded-2xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+            />
+            {searchQuery && (
               <button
                 type="button"
-                key={f}
-                data-ocid={`menu.${f}.tab`}
-                onClick={() => setActiveFilter(f)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  activeFilter === f
-                    ? "bg-orange-500 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {f === "all" ? "All" : f === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
+                <X size={16} />
               </button>
-            ))}
+            )}
           </div>
+
+          {/* Search Results */}
+          {searchQuery.trim() ? (
+            <div className="mb-8">
+              <p className="text-sm text-gray-500 mb-3">
+                {searchResults.length} result(s) for &ldquo;{searchQuery}&rdquo;
+              </p>
+              {searchResults.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {searchResults.map((item) => (
+                    <MenuItemCard key={item.id} item={item} isOpen={isOpen} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-gray-400">
+                  <Search size={32} className="mx-auto mb-2 opacity-40" />
+                  <p>No items found for &ldquo;{searchQuery}&rdquo;</p>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {/* Veg/NonVeg Filter - hidden when searching */}
+          {!searchQuery.trim() && (
+            <div className="flex gap-2 mb-4">
+              {(["all", "veg", "nonveg"] as const).map((f) => (
+                <button
+                  type="button"
+                  key={f}
+                  data-ocid={`menu.${f}.tab`}
+                  onClick={() => setActiveFilter(f)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    activeFilter === f
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {f === "all" ? "All" : f === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Special Offers */}
@@ -618,8 +680,8 @@ export function RestaurantPage() {
           </div>
         )}
 
-        {/* Category Pills */}
-        {categories.length > 0 && (
+        {/* Category Pills - hidden when searching */}
+        {!searchQuery.trim() && categories.length > 0 && (
           <div className="max-w-4xl mx-auto px-4 mb-6">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {categories.map((cat) => (
@@ -637,63 +699,65 @@ export function RestaurantPage() {
           </div>
         )}
 
-        {/* Menu Items by Category */}
-        <div className="max-w-4xl mx-auto px-4 pb-32">
-          {categories.map((cat) => {
-            const catItems = filteredItems.filter(
-              (item) => item.categoryId === cat.id,
-            );
-            if (catItems.length === 0) return null;
-            return (
-              <div
-                key={cat.id}
-                ref={(el) => {
-                  categoryRefs.current[cat.id] = el;
-                }}
-                className="mb-8"
-              >
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-800 text-lg">
-                      {cat.name}
-                    </h3>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        cat.type === "veg"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {cat.type === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
-                    </span>
-                  </div>
-                  {cat.image && (
-                    <img
-                      src={cat.image}
-                      alt={cat.name}
-                      className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
-                    />
-                  )}
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {catItems.map((item, idx) => (
-                    <div key={item.id} data-ocid={`menu.item.${idx + 1}`}>
-                      <MenuItemCard item={item} isOpen={isOpen} />
+        {/* Menu Items by Category - hidden when searching */}
+        {!searchQuery.trim() && (
+          <div className="max-w-4xl mx-auto px-4 pb-32">
+            {categories.map((cat) => {
+              const catItems = filteredItems.filter(
+                (item) => item.categoryId === cat.id,
+              );
+              if (catItems.length === 0) return null;
+              return (
+                <div
+                  key={cat.id}
+                  ref={(el) => {
+                    categoryRefs.current[cat.id] = el;
+                  }}
+                  className="mb-8"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-gray-800 text-lg">
+                        {cat.name}
+                      </h3>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          cat.type === "veg"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {cat.type === "veg" ? "🟢 Veg" : "🔴 Non-Veg"}
+                      </span>
                     </div>
-                  ))}
+                    {cat.image && (
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
+                      />
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {catItems.map((item, idx) => (
+                      <div key={item.id} data-ocid={`menu.item.${idx + 1}`}>
+                        <MenuItemCard item={item} isOpen={isOpen} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              );
+            })}
+            {filteredItems.length === 0 && categories.length === 0 && (
+              <div
+                data-ocid="menu.empty_state"
+                className="text-center py-16 text-gray-400"
+              >
+                <p>No menu items available yet</p>
               </div>
-            );
-          })}
-          {filteredItems.length === 0 && categories.length === 0 && (
-            <div
-              data-ocid="menu.empty_state"
-              className="text-center py-16 text-gray-400"
-            >
-              <p>No menu items available yet</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <CartButton onClick={() => setCartOpen(true)} isOpen={cartOpen} />
